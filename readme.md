@@ -17,8 +17,8 @@ This is a simple Node.JS API written with Typescript, to be used as a bootstrap 
   `mongodb+srv://myuser:pwd@cluster0.nf1ohe1.mongodb.net?retryWrites=true&w=majority&appName=Cluster0`\
   ...change it to:\
   `mongodb+srv://myuser:pwd@cluster0.nf1ohe1.mongodb.net/mydatabase?retryWrites=true&w=majority&appName=Cluster0`
-  - run `npm install`
-  - run `npm start`
+- run `npm install`
+- run `npm start`
 
 ## TODO
 - JWT Authentication
