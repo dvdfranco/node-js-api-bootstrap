@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllCategories, updateCategory, searchCategoryByName } from './controllers/categoryController';
+import { getAllUsers, createUser, updateUser, searchByEmail, deleteUser } from './controllers/userController';
 
 const app = express();
 const port = 3000;
@@ -7,13 +7,14 @@ const port = 3000;
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Hello, Pockety!');
+  res.send('Hello, Bootstrap Node.JS API!');
 });
 
-app.get('/api/categories', getAllCategories);
-app.put('/api/categories/:id', updateCategory);
-app.get('/api/categories/search', searchCategoryByName);
-
+app.get('/api/users', getAllUsers);
+app.post('/api/users', createUser);
+app.put('/api/users/:id', updateUser);
+app.get('/api/users/searchByEmail', searchByEmail);
+app.delete('/api/users/:id', deleteUser);
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
