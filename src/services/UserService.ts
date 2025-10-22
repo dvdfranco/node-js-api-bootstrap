@@ -57,6 +57,17 @@ class UserService {
             }
         });
     }
+
+    async searchUserByUserName(username: string) {
+        return await prismaClient.user.findMany({
+            where: {
+                username: {
+                    equals: username,
+                    mode: "insensitive"
+                }
+            }
+        });
+    }
 }
 
 export { UserService };

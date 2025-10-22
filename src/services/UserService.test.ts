@@ -25,6 +25,12 @@ const mockPrismaClient = prismaClient as unknown as {
   };
 };
 
+const mockUsers: User[] = [
+  { id: '1', username: 'user1', email: 'user1@test.com', name: 'User One', password: 'hash1', createdAt: new Date(), updatedAt: new Date(), createdBy: 'admin', updatedBy: 'admin' },
+  { id: '2', username: 'user2', email: 'user2@test.com', name: 'User Two', password: 'hash2', createdAt: new Date(), updatedAt: new Date(), createdBy: 'admin', updatedBy: 'admin' },
+];
+
+
 describe('UserService', () => {
   let userService: UserService;
 
@@ -35,10 +41,6 @@ describe('UserService', () => {
 
   describe('getAllUsers', () => {
     it('should return all users successfully', async () => {
-      const mockUsers: User[] = [
-        { id: '1', username: 'user1', email: 'user1@test.com', name: 'User One', password: 'hash1', createdAt: new Date(), updatedAt: new Date(), createdBy: 'admin', updatedBy: 'admin' },
-        { id: '2', username: 'user2', email: 'user2@test.com', name: 'User Two', password: 'hash2', createdAt: new Date(), updatedAt: new Date(), createdBy: 'admin', updatedBy: 'admin' },
-      ];
 
       mockPrismaClient.user.findMany.mockResolvedValue(mockUsers);
 
@@ -155,4 +157,27 @@ describe('UserService', () => {
       expect(mockPrismaClient.user.findMany).toHaveBeenCalledTimes(1);
     });
   });
+
+  
+
+  describe('searchUserByUsername', () => {
+    it('should search user by username successfully', async () => {
+      const username = 'user1';
+      mockPrismaClient.user.findMany.mockResolvedValue({...mockUsers[0]});
+
+      const result = await userService.searchUserByUserName(username);
+
+
+      expect(result).toEqual({...mockUsers[0]});
+      expect(mockPrismaClient.user.findMany).toHaveBeenCalledWith({
+        where: {
+          username: {
+            equals: username,
+            mode: 'insensitive',
+          },
+        },
+      });
+    });
+  });
+
 });
