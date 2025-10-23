@@ -2,6 +2,7 @@ import { UserService } from "../services/UserService";
 import { Request, Response } from "express";
 import { User } from "@prisma/client";
 import express from 'express';
+import { decrypt } from "../util/crypt";
 
 const userService = new UserService();
 
@@ -21,14 +22,17 @@ export const createUser = async (req: express.Request, res: express.Response): P
 
 export const updateUser = async (req: express.Request, res: express.Response): Promise<void> => {
     const updateData = req.body as Partial<User>;
+    const userId = decrypt(req.params['id']);
 
-    await userService.updateUser(req.params['id'], updateData, "User Id");
-    
+    await userService.updateUser(userId, updateData, "User Id");
+
     res.json({ ok: true });
 }
 
 export const deleteUser = async (req: express.Request, res: express.Response): Promise<void> => {
-    await userService.deleteUser(req.params['id']);
+    const userId = decrypt(req.params['id']);
+
+    await userService.deleteUser(userId);
     res.json({ ok: true });
 }
 

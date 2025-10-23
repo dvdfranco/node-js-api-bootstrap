@@ -1,39 +1,44 @@
 import jwt from 'jsonwebtoken';
 import express from 'express';
+import { UserService } from '../services/UserService';
+import { encrypt } from '../util/crypt';
 
-interface AuthUser {
+interface UserTokenInfo {
+    id: string;
     username: string;
+    name: string;
+    email: string;
 }
 
 declare global {
     namespace Express {
         interface Request {
-            user?: AuthUser;
+            user?: UserTokenInfo;
         }
     }
 }
 
-let refreshTokens: string[] = [];
-
-export const authLogin = (req: express.Request, res: express.Response) => {
+export const authLogin = async (req: express.Request, res: express.Response) => {
     const username = req.body['username'] as string;
-    //const password = req.body['password'] as string;
+    const password = req.body['password'] as string;
 
-    const user : AuthUser = { username };
+    const dbUser = await new UserService().authenticateUser(username, password);
 
-    const token = generateAccessToken(user);
-    const refreshToken = jwt.sign (user, process.env['REFRESH_TOKEN_SECRET'] as string);
-    refreshTokens.push(refreshToken);
-    console.log("pushed", refreshToken);
+    if (!dbUser)
+        return res.status(403).json({ message: "Invalid username or password" });
+
+    const tokenInfo : UserTokenInfo = {
+        id: encrypt(dbUser.id),
+        username: dbUser.username,
+        name: dbUser.name,
+        email: dbUser.email
+    };
+
+    const token = generateAccessToken(tokenInfo);
+    const refreshToken = jwt.sign (tokenInfo, process.env['REFRESH_TOKEN_SECRET'] as string, { expiresIn: '1d' });
     
-    res.json({accessToken: token, refreshToken});
+    return res.json({accessToken: token, refreshToken});
 };
-
-export const authLogout = (req: express.Request, res: express.Response) => {
-    const refreshToken = req.body['token'];
-    refreshTokens = refreshTokens.filter(token => token !== refreshToken);
-    res.sendStatus(204);
-}
 
 export const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const authHeader = req.headers['authorization'];
@@ -43,23 +48,21 @@ export const authenticateToken = (req: express.Request, res: express.Response, n
 
     jwt.verify(token, process.env['ACCESS_TOKEN_SECRET'] as string, {}, (err: any, user: any) => {
         if (err) res.sendStatus(403);
-        console.log("type", typeof(user));
-        req.user = user as AuthUser;
+        req.user = user as UserTokenInfo;
         return next();
     });
     return;
 }
 
 export const generateAccessToken = (user: any) => {
-    return jwt.sign(user, process.env['ACCESS_TOKEN_SECRET'] as string, { expiresIn: '10s' });
+    return jwt.sign(user, process.env['ACCESS_TOKEN_SECRET'] as string, { expiresIn: '3h' });
 }
 
 export const refreshToken = (req: express.Request, res: express.Response) => {
     const refreshToken = req.body['token'];
-    console.log("list", refreshTokens);
 
     if (!refreshToken) return res.sendStatus(401);
-    if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403);
+    // Possible for validation for token inspection: if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403);
 
     jwt.verify(refreshToken, process.env['REFRESH_TOKEN_SECRET'] as string, (err: any, user: any) => {
         if (err) return res.sendStatus(403);

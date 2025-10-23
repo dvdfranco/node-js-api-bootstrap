@@ -1,18 +1,24 @@
 import { User, Prisma } from "@prisma/client";
 import prismaClient from "../prisma";
+import bcrypt from "bcrypt";
 
 class UserService {
     async getAllUsers() {
         const users = await prismaClient.user.findMany();
         return { ok: true, users };
     }
+
     async createUser(data: Partial<User>, createdBy: string) {
         const dateNow = new Date().toISOString();
+
+        //encrypt!
+        const cryptPwd = await bcrypt.hash(data.password!, 10);
+
         const createData: Prisma.UserCreateInput = {
             username: data.username!,
             email: data.email!,
             name: data.name!,
-            password: data.password!,
+            password: cryptPwd,
             createdAt: dateNow,
             createdBy: createdBy,
             updatedAt: dateNow,
@@ -58,7 +64,7 @@ class UserService {
         });
     }
 
-    async searchUserByUserName(username: string) {
+    async searchUserByUserName(username: string): Promise<User[]> {
         return await prismaClient.user.findMany({
             where: {
                 username: {
@@ -67,6 +73,16 @@ class UserService {
                 }
             }
         });
+    }
+
+    async authenticateUser(username: string, password: string): Promise<User | undefined> {
+        const users = await this.searchUserByUserName(username);
+        if (!users.length) return;
+        
+        const user = users[0];
+        if (await bcrypt.compare(password, user.password))
+            return user;
+        return;
     }
 }
 
